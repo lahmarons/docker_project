@@ -1,0 +1,47 @@
+
+services:
+  pozos-registry:
+    image: registry:2.8.1
+    container_name: pozos-registry
+    restart: always
+
+    # ports:
+    #   - "5000:5000"
+
+    volumes:
+      - /opt/docker/registry:/var/lib/registry
+      - ./registry/auth:/auth:ro
+
+    environment:
+      REGISTRY_STORAGE_DELETE_ENABLED: "true"
+      REGISTRY_AUTH: htpasswd
+      REGISTRY_AUTH_HTPASSWD_REALM: "Registry Realm"
+      REGISTRY_AUTH_HTPASSWD_PATH: /auth/htpasswd
+
+    networks:
+      - POZOS-REGISTRY-NETWORK
+
+  frontend-registry:
+    image: joxit/docker-registry-ui:2
+    container_name: frontend-registry
+    restart: always
+
+    depends_on:
+      - pozos-registry
+
+    ports:
+      - "8080:80"
+
+    environment:
+      NGINX_PROXY_PASS_URL: "http://pozos-registry:5000"
+      DELETE_IMAGES: "true"
+      REGISTRY_TITLE: "Pozos Registry"
+      SINGLE_REGISTRY: "true"
+
+    networks:
+      - POZOS-REGISTRY-NETWORK
+
+networks:
+  POZOS-REGISTRY-NETWORK:
+    driver: bridge
+    name: POZOS-REGISTRY-NETWORK
